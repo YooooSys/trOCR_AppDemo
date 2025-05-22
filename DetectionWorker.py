@@ -4,16 +4,21 @@ import pandas as pd
 from yolo import yolo
 from trOCR_ import *
 from fuzzywuzzy import process
-
+from ExcelFileHandler import ExcelFileHandler
 class DetectionWorker(QThread):
     error_msg = pyqtSignal(str)
     notification = pyqtSignal(str)
-    def __init__(self, file_path, excel_path, parent=None):
+    def __init__(self, file_path:str, excel_path: str, excel_mssv_column: str = "MSSV", excel_score_column:str = "Điểm", parent=None):
         super().__init__(parent)
         self.file_path = file_path
         self.excel_path = excel_path
-        self.df = pd.read_excel(self.excel_path, engine='openpyxl')
-        self.mssv_list = self.df['MSSV'].astype(str).tolist()
+        self.df = ExcelFileHandler(excel_path).df
+        self.excel_mssv_column, self.excel_score_column = ExcelFileHandler(excel_path).check(excel_mssv_column, excel_score_column)
+        if self.excel_mssv_column == None:
+            self.error_msg.emit(f"Tên cột (MSSV hoặc Điểm) không hợp lệ")
+            return 
+        
+        self.mssv_list = ExcelFileHandler(excel_path).get(excel_mssv_column)
 
     def lexicon_search(self, mssv_text, threshold=90):
         if not mssv_text or not mssv_text.isdigit():
@@ -48,9 +53,9 @@ class DetectionWorker(QThread):
         if mssv_text:
             matched_mssv, match_score = self.lexicon_search(mssv_text)
             if matched_mssv:
-                mask = self.df['MSSV'].astype(str) == matched_mssv
+                mask = self.df[self.excel_mssv_column].astype(str) == matched_mssv
                 if mask.any():
-                    self.df.loc[mask, 'Điểm'] = score_text
+                    self.df.loc[mask, self.excel_score_column] = score_text
                     self.df.to_excel(self.excel_path, index=False, engine='openpyxl')
                     success = True
 
