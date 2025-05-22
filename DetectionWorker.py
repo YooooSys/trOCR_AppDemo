@@ -61,7 +61,8 @@ class DetectionWorker(QThread):
 
             
         if success and score_text:
-            print(f"MSSV: {mssv_text} \t Điểm: {score_text}")
-            self.notification.emit(f"✔️ MSSV: {mssv_text} \t Điểm: {score_text}")
+            self.notification.emit(f"✔️  MSSV: {mssv_text}  Điểm: {score_text}")
         elif success and not score_text:
-            self.notification.emit(f"❌ MSSV: {mssv_text} \t Điểm: Not found")
+            self.notification.emit(f"❌ MSSV: {mssv_text}  Điểm: Not found")
+        elif not success:
+            self.error_msg.emit(f"Không thể đọc {self.file_path}")
